@@ -1,0 +1,151 @@
+<template>
+  <viewerpage :user.sync="user" :repos.sync="repos" :hasMore.sync="hasMore" :tip.sync="tip" :error.sync="error"></viewerpage>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import userApi from '../../web/user/user-api.js'
+  import ViewerPage from '../user/components/viewer-page'
+  import DateUtil from '../../utils/date'
+
+  let that
+
+  export default class UserDetail extends wepy.page {
+    data = {
+      user: null,
+      repos: [],
+      pageInfo: null,
+      hasMore: true,
+      error: false,
+      tip: '正在加载'
+    }
+
+    components = {
+      viewerpage: ViewerPage
+    }
+
+    events = {
+      'loadMore': () => {
+        if (!that.pageInfo) return
+        if (that.pageInfo.hasNextPage) {
+          if (that.type === 'User') {
+            this.getUserInfo(that.user.login)
+          } else if (that.type === 'Organization') {
+            this.getOrgInfo(that.user.login)
+          }
+        }
+      },
+
+      'retry': (tag) => {
+        that.getUserInfo()
+      }
+    }
+
+    onLoad(options) {
+      that = this
+      var login = options.login
+      that.type = options.type
+      if (login) {
+        wepy.setNavigationBarTitle({
+          title: login
+        })
+        if (that.type === 'User') {
+          this.getUserInfo(login)
+        } else if (that.type === 'Organization') {
+          this.getOrgInfo(login)
+        }
+      }
+    }
+
+    async getUserInfo(login) {
+      if (this.loading) return
+
+      this.error = false
+      this.loading = true
+
+      var after = null
+      if (that.pageInfo && that.pageInfo.hasNextPage) {
+        after = that.pageInfo.endCursor
+      }
+
+      try {
+        const data = await userApi.getUserInfo(login, after)
+        this.loading = false
+        this.user = data.user
+        this.user.type = 'User'
+        var repos = this.formatDate(data.user.repositories.nodes)
+        this.repos = this.repos.concat(repos)
+        this.pageInfo = data.user.repositories.pageInfo
+        this.noMore()
+      } catch (e) {
+        wepy.showToast({
+            title: e,
+            icon: 'none'
+          })
+          this.showError()
+      }
+    }
+
+    async getOrgInfo(login) {
+      if (this.loading) return
+
+      this.error = false
+      this.loading = true
+
+      var after = null
+      if (that.pageInfo && that.pageInfo.hasNextPage) {
+        after = that.pageInfo.endCursor
+      }
+      try {
+        const data = await userApi.getOrgInfo(login, after)
+        this.loading = false
+        this.user = data.organization
+        this.user.type = 'Org'
+        var repos = this.formatDate(data.user.repositories.nodes)
+        this.repos = this.repos.concat(repos)
+        this.pageInfo = data.organization.repositories.pageInfo
+        this.noMore()
+      } catch (e) {
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+        this.showError()
+      }
+    }
+
+    noMore() {
+      if (!this.pageInfo.hasNextPage) {
+        this.hasMore = false
+        this.tip = '别拉了，没有更多啦！'
+      }
+      this.$apply()
+    }
+
+    showError() {
+      this.loading = false
+      if (!this.repos || this.repos.length === 0) {
+        this.error = true
+      } else {
+        this.error = false
+      }
+      this.$apply()
+    }
+
+    formatDate(repos) {
+      for (var repo of repos) {
+        if (repo.stargazers.totalCount > 1000) {
+          repo.stargazers.totalCount = (repo.stargazers.totalCount/1000).toFixed(1) + 'k'
+        }
+        if (repo.forkCount > 1000) {
+          repo.forkCount = (repo.forkCount/1000).toFixed(1) + 'k'
+        }
+        if (repo.pushedAt) {
+          repo.pushedAt = DateUtil.transformToWorld(repo.pushedAt.replace('T', ' ').replace('Z', ''))
+        }
+      }
+
+      return repos
+    }
+  }
+</script>

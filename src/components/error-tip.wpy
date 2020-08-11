@@ -1,0 +1,44 @@
+<template>
+  <view class="error" @tap="click" data-id="{{tag}}">
+    <image style="width: 100rpx; height: 100rpx;" src="/images/ic-error.png"/>
+    <text class="text">糟糕，服务器打盹了\n点我叫醒它</text>
+  </view>
+</template>
+
+<style>
+
+  .error {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .text {
+    font-size: var(--font-tip);
+    color: black;
+    margin-top: 12rpx;
+    text-align: center;
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class ErrorTip extends wepy.component {
+    props = {
+      tag: {
+        type: String,
+        default: '-1'
+      }
+    }
+
+    methods = {
+      click(e) {
+        this.$emit('retry', e.currentTarget.dataset.id)
+      }
+    }
+  }
+</script>

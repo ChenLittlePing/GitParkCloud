@@ -1,0 +1,271 @@
+<template>
+  <view class="container">
+    <view class="tab">
+      <view class="tab-item" data-id="0" @tap="clickTab">
+        <text class="tab-text {{index == 0? 'white-text': 'black-text'}}">今天</text>
+        <view class="tab-indicator {{index == 0? 'white-background': 'blue-background'}}"/>
+      </view>
+      <view class="tab-item" data-id="1" @tap="clickTab">
+        <text class="tab-text {{index == 1? 'white-text': 'black-text'}}">本周</text>
+        <view class="tab-indicator {{index == 1? 'white-background': 'blue-background'}}"/>
+      </view>
+      <view class="tab-item" data-id="2" @tap="clickTab">
+        <text class="tab-text {{index == 2? 'white-text': 'black-text'}}">本月</text>
+        <view class="tab-indicator {{index == 2? 'white-background': 'blue-background'}}"/>
+      </view>
+    </view>
+    <swiper class="swiper" duration="300" current="{{index}}" bindchange="onChange">
+      <swiper-item>
+        <view scroll-y class="swiper-item">
+          <repeat for="{{repos.days}}" index="idx" item="item">
+            <repoitem :item.sync="item"></repoitem>
+          </repeat>
+          <view class="loading-container" wx:if="{{loading[0]}}">
+            <loading0 :loading.sync="true" :tip.sync="加载中..."/>
+          </view>
+          <errortip0 :tag.sync="one" wx:if="{{error[0] && !loading[0]}}"/>
+        </view>
+      </swiper-item>
+      <swiper-item>
+        <view class="swiper-item" index="idx" item="item">
+          <repeat for="{{repos.weeks}}">
+            <repoitem :item.sync="item"></repoitem>
+          </repeat>
+          <view class="loading-container" wx:if="{{loading[1]}}">
+            <loading1 :loading.sync="true" :tip.sync="加载中..."/>
+          </view>
+          <errortip1 :tag.sync="two" wx:if="{{error[1] && !loading[1]}}"/>
+        </view>
+      </swiper-item>
+      <swiper-item>
+        <view class="swiper-item" index="idx" item="item">
+          <repeat for="{{repos.months}}">
+            <repoitem :item.sync="item"></repoitem>
+          </repeat>
+          <view class="loading-container" wx:if="{{loading[2]}}">
+            <loading2 :loading.sync="true" :tip.sync="加载中..."/>
+          </view>
+          <errortip2 :tag.sync="three" wx:if="{{error[2] && !loading[2]}}"/>
+        </view>>
+      </swiper-item>
+    </swiper>
+  </view>
+</template>
+
+<style>
+  .container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    background: var(--color-blue);
+  }
+
+  .tab-item {
+    flex: 1;
+    height: 100rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tab-text {
+    font-size: var(--font-stitle);
+    margin: 24rpx;
+  }
+
+  .tab-indicator {
+    width: 100%;
+    height: 10rpx;
+  }
+
+  .white-text {
+    color: white;
+    font-weight: bold;
+    font-size: var(--font-title);
+  }
+
+  .white-background {
+    background: white;
+  }
+
+  .blue-text {
+    color: var(--color-blue);
+  }
+
+  .blue-background {
+    background: var(--color-blue);
+  }
+
+  .black-text {
+    color: black;
+    font-size: var(--font-body);
+  }
+
+  .swiper {
+    width: 100%;
+    flex: 1;
+    margin-top: 12rpx;
+  }
+
+  .swiper-item {
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+  }
+
+  .loading-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+</style>
+
+<script>
+  import wepy from 'wepy'
+  import TrendingApi from '../../web/trending-api/trending-api'
+  // import TrendingFetcher from '../../utils/trending/trending-fetcher'
+
+  import RepoItem from '../../components/item-repo'
+  import Loading from '../../components/loading'
+  import ErrorTip from '../../components/error-tip'
+
+  let that
+
+  export default class FindHome extends wepy.page {
+    config = {
+      'navigationBarTitleText': '热门',
+      'enablePullDownRefresh': true,
+      'backgroundTextStyle': 'dark'
+    }
+
+    components = {
+      repoitem: RepoItem,
+
+      loading0: Loading,
+      loading1: Loading,
+      loading2: Loading,
+
+      errortip0: ErrorTip,
+      errortip1: ErrorTip,
+      errortip2: ErrorTip
+    }
+
+    data = {
+      one: '0',
+      two: '1',
+      three: '2',
+      loading: [false, false, false],
+      error: [false, false, false],
+      index: 0,
+
+      repos: {
+        'days': {},
+        'weeks': {},
+        'months': {}
+      },
+
+      REPO_TYPE: ['days', 'weeks', 'months'],
+
+      DATE_TYPE: ['daily', 'weekly', 'monthly']
+    }
+
+    methods = {
+      clickTab(e) {
+        that.index = parseInt(e.currentTarget.dataset.id)
+        that.$apply()
+        that.getTrending(that.index)
+      },
+
+      onChange(e) {
+        that.index = e.detail.current
+        that.getTrending(that.index)
+      }
+    }
+
+    events = {
+      'retry': (tag) => {
+        that.getTrending(tag)
+      }
+    }
+
+    async onLoad() {
+      that = this
+      this.getTrending(0)
+    }
+
+    onPullDownRefresh() {
+      this.setDatas(this.index, {})
+      this.getTrending(this.index)
+    }
+
+    async getTrending(index) {
+      if (this.loading[index]) return
+
+      var go = this.getDatas()
+      var havaData = go ? JSON.stringify(go) !== '{}' : false
+      if (!havaData) {
+        this.loading[index] = true
+        try {
+          const result = await TrendingApi.trending(this.getDateType(index))
+          that.loading[index] = false
+          that.error[index] = false
+          wepy.stopPullDownRefresh()
+          that.setDatas(index, result)
+        } catch (error) {
+          that.loading[index] = false
+          that.error[index] = true
+          wepy.stopPullDownRefresh()
+          wepy.showToast({
+            title: error,
+            icon: 'none'
+          })
+          that.$apply()
+        }
+      }
+    }
+
+    getDateType(index) {
+      return this.DATE_TYPE[that.index]
+    }
+
+    getRepoType(index) {
+      return this.REPO_TYPE[index]
+    }
+
+    setDatas(index, repos) {
+      repos.forEach(element => {
+        if (element.stars > 1000) {
+          element.stars = (element.stars/1000).toFixed(1) + 'k'
+        }
+        if (element.forks > 1000) {
+          element.forks = (element.forks/1000).toFixed(1) + 'k'
+        }
+      });
+      this.repos[this.getRepoType(index)] = repos
+      this.$apply()
+    }
+
+    getDatas() {
+      var data = null
+      if (this.index === 0) {
+        data = this.repos['days']
+      } else if (this.index === 1) {
+        data = this.repos['weeks']
+      } else if (this.index === 2) {
+        data = this.repos['months']
+      }
+      return data
+    }
+  }
+</script>

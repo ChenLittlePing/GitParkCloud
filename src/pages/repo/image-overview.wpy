@@ -1,0 +1,30 @@
+<template>
+  <image class="img" src="{{img}}" mode="aspectFit" @tap="click"/>
+</template>
+
+<style>
+  .img {
+    width: 100vw;
+    height: 100vh;
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class ImageOverview extends wepy.page {
+    data = {
+      img: ''
+    }
+
+    methods = {
+      click() {
+        wepy.navigateBack()
+      }
+    }
+
+    onLoad(options) {
+      this.img = options.img + '?raw=true'
+    }
+  }
+</script>

@@ -1,0 +1,568 @@
+<template>
+  <!-- user info layout -->
+  <viewerpage class="{{userInfoAnim}} zero-opacity" :user.sync="user" :repos.sync="repos" logout="true" :hasMore.sync="hasMore" :tip.sync="tip" :error.sync="error" @loadMore="loadMore" @logout="logout" @retry="retry"></viewerpage>
+
+  <!-- login layout -->
+  <scroll-view class="scroll-login {{loginAnim}}" scroll-y wx:if="{{!user && !refreshing}}">
+    <view class="container">
+      <view class="login">
+        <image class="login-logo" src='/images/ic-login-logo.png'/>
+        <view class="tab">
+          <view class="tab-item" data-id="0" @tap="clickTab">
+            <text class="tab-text {{index == 0? 'blue-text': 'black-text'}}">账号</text>
+            <view class="tab-indicator {{index == 0? 'blue-background' : 'white-background'}}"/>
+          </view>
+          <view class="tab-item" data-id="1" @tap="clickTab">
+            <text class="tab-text {{index == 1? 'blue-text': 'black-text'}}">Token</text>
+            <view class="tab-indicator {{index == 1? 'blue-background' : 'white-background'}}"/>
+          </view>
+        </view>
+        <swiper class="swiper" duration="300" previous-margin="-10px" next-margin="-10px" current="{{index}}" bindchange="onChange">
+          <swiper-item class="swiper-item">
+            <view class="account">
+              <view class="input-container">
+                <view class="title">账号</view>
+                <input class="input sienna" placeholder="请输入GitHub登陆账号" bindinput="inputName" value="{{name}}"/>
+              </view>
+
+              <view class="input-container">
+                <view class="title">密码</view>
+                <input class="input yellow" type="password" placeholder="请输入GitHub登陆密码" bindinput="inputPsw" value="{{psw}}"/>
+              </view>
+            </view>
+          </swiper-item>
+          <swiper-item class="swiper-item">
+            <view class="token">
+              <view class="input-container">
+                <view class="title">Token</view>
+                <image class="token-q" src="/images/ic-q.png" @tap="clickHelp"/>
+                <input class="input yellow" placeholder="请输入GitHub Token" bindinput="inputToken" value="{{token}}"/>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+
+        <view class="login-btn" hover-class="login-btn-hover" @tap="login">登陆</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <image class="ic-about" mode="aspectFit" src="/images/ic-about.png" @tap="clickAbout"/>
+
+</template>
+
+<style>
+  .scroll-login {
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    opacity: 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+  }
+
+  .container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .login {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .zero-opacity {
+    opacity: 0;
+  }
+
+  .login-logo {
+    width: 200rpx;
+    height: 200rpx;
+    margin-bottom: 24rpx;
+  }
+
+  .tab {
+    width: 250rpx;
+    height: 80rpx;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tab-text {
+    font-size: var(--font-stitle);
+    margin: 12rpx;
+  }
+
+  .tab-indicator {
+    width: 100%;
+    height: 5rpx;
+  }
+
+  .blue-text {
+    color: var(--color-blue);
+  }
+
+  .black-text {
+    color: black;
+    font-size: var(--font-body);
+  }
+
+  .white-background {
+    background: white;
+  }
+
+  .blue-background {
+    background: var(--color-blue);
+  }
+
+  .swiper {
+    width: 60vw;
+    height: 200rpx;
+  }
+
+  .swiper-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .account, .token {
+    width: 60vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .input-container {
+    width: 100%;
+    height: 50rpx;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12rpx;
+    margin-bottom: 12rpx;
+  }
+
+  .title {
+    font-size: var(--font-stitle);
+  }
+
+  .input {
+    flex: 1;
+    font-size: var(--font-body);
+    margin-left: 12rpx;
+    padding: 8rpx;
+  }
+
+  .token-q {
+    width: 30rpx;
+    height: 30rpx;
+    margin-left: 12rpx;
+  }
+
+  .sienna {
+    border-bottom: 1px var(--color-sienna) solid;
+  }
+
+  .yellow {
+    border-bottom: 1px var(--color-yellow) solid;
+  }
+
+  .login-btn {
+    width: 40vw;
+    font-size: var(--font-stitle);
+    padding: 20rpx;
+    margin-top: 24rpx;
+    color: white;
+    background: var(--color-blue);
+    border-radius: 4rpx;
+    text-align: center;
+  }
+
+  .login-btn-hover {
+    width: 40vw;
+    font-size: var(--font-stitle);
+    padding: 20rpx;
+    margin-top: 24rpx;
+    color: white;
+    background: #88c5fd;
+    border-radius: 4rpx;
+    text-align: center;
+  }
+
+  .tip-conatiner {
+    display: flex;
+    flex-direction: column;
+    border: #eee 1px solid;
+    margin: 48rpx;
+  }
+
+  .tip-title {
+    width: 100%;
+    padding: 20rpx 0;
+    font-size: var(--font-body);
+    color: #555;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: #eee 1px solid;
+  }
+
+  .tip-text {
+    font-size: var(--font-tip);
+    color: #555;
+    margin: 8rpx;
+  }
+
+  .tip-help {
+    font-size: var(--font-tip);
+    color: var(--color-blue);
+    margin: 0rpx 8rpx;
+    margin-bottom: 8rpx;
+    text-decoration-line: underline;
+  }
+
+  .ic-about {
+    width: 40rpx;
+    height: 40rpx;
+    padding: 25rpx;
+    position: fixed;
+    bottom: 30rpx;
+    right: 30rpx;
+    opacity: 0.8;
+    box-shadow: 2rpx 2rpx 20rpx 2rpx #aaa;
+    border-radius: 50%;
+    background: white;
+  }
+
+  .anim-show {
+    animation: fade-in 0.5s forwards;
+  }
+
+  .anim-hide {
+    animation: fade-out 0.5s forwards;
+  }
+
+  @keyframes fade-in {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+
+  @keyframes fade-out {
+    from {opacity: 1;}
+    to {opacity: 0;}
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+  import userApi from '../../web/user/user-api.js'
+
+  import RepoItem from '../../components/item-repo'
+  import ViewerPage from './components/viewer-page'
+
+  import DateUtil from '../../utils/date'
+  import User from '../../utils/user'
+
+  let that
+
+  export default class UserHome extends wepy.page {
+    config = {
+      'navigationBarTitleText': '我的',
+      'enablePullDownRefresh': true,
+      'backgroundTextStyle': 'dark'
+    };
+
+    components = {
+      repoitem: RepoItem,
+      viewerpage: ViewerPage
+    }
+
+    data = {
+      index: 0,
+      name: '',
+      psw: '',
+      token: '',
+
+      user: null,
+      repos: [],
+      pageInfo: null,
+
+      loginAnim: '',
+      userInfoAnim: '',
+
+      refreshing: false,
+      hasMore: true,
+      error: false,
+      tip: '正在加载'
+    }
+
+    onLoad(options) {
+      that = this
+      this.name = User.getUserName()
+    }
+
+    onShow() {
+      var userInfo = User.getUserInfo()
+      if (userInfo) {
+        this.user = userInfo
+        this.repos = userInfo.repositories.nodes
+        this.pageInfo = userInfo.repositories.pageInfo
+        this.userInfoAnim = 'anim-show'
+        this.noMore()
+      } else {
+        this.loginAnim = 'anim-show'
+        wepy.showToast({
+          title: '请先登陆',
+          icon: 'none'
+        })
+      }
+    }
+
+    onPullDownRefresh() {
+      var login = this.user.login
+      this.repos = []
+      this.pageInfo = null
+      this.hasMore = true
+      this.tip = '正在加载'
+      this.$apply()
+      if (login) {
+        this.refreshing = true
+        this.getUserInfo(login)
+      } else {
+        wepy.stopPullDownRefresh()
+      }
+    }
+
+    methods = {
+      clickTab(e) {
+        this.index = parseInt(e.currentTarget.dataset.id)
+      },
+
+      onChange(e) {
+        this.index = e.detail.current
+      },
+
+      clickHelp() {
+        wepy.navigateTo({
+          url: 'help-token'
+        })
+      },
+
+      clickAbout() {
+        wepy.navigateTo({
+          url: '/pages/setting/setting-home'
+        })
+      },
+
+      inputName(e) {
+        this.name = e.detail.value
+      },
+
+      inputPsw(e) {
+        this.psw = e.detail.value
+      },
+
+      inputToken(e) {
+        this.token = e.detail.value
+      },
+
+      login(e) {
+        if (this.index === 0) {
+          this.loginByAccount()
+        } else {
+          this.loginByToken()
+        }
+      }
+    }
+
+    events = {
+      'loadMore': () => {
+        if (!that.pageInfo) return
+        if (that.pageInfo.hasNextPage) {
+          that.getUserInfo(that.user.login)
+        } else {
+          that.noMore()
+        }
+      },
+
+      'logout': () => {
+        that.user = null
+        that.name = User.getUserName()
+        that.repos = []
+        that.pageInfo = null
+
+        that.loginAnim = 'anim-show'
+        that.userInfoAnim = 'anim-hide'
+
+        that.$apply()
+
+        User.clear()
+      },
+
+      'retry': (tag) => {
+        that.getUserInfo(that.user.login)
+      }
+    }
+
+    async getUserInfo(login) {
+      if (this.loading) return
+
+      var after = null
+      if (this.pageInfo && this.pageInfo.hasNextPage) {
+        after = this.pageInfo.endCursor
+      }
+      this.error = false
+      this.loading = true
+      try {
+        const data = await userApi.getUserInfo(login, after)
+        wepy.stopPullDownRefresh()
+        this.refreshing = true
+        this.loading = false
+        this.user = data.user
+        this.user.type = 'User'
+        var repos = this.formatDate(data.user.repositories.nodes)
+        this.repos = this.repos.concat(repos)
+        this.pageInfo = data.user.repositories.pageInfo
+
+        // 保存到本地
+        data.user.repositories.nodes = this.repos
+        this.$parent.globalData.user = data.user
+        if (this.user) {
+          this.loginAnim = 'anim-hide'
+          this.userInfoAnim = 'anim-show'
+        }
+        this.$apply()
+        this.noMore()
+        User.saveUserInfo(this.user)
+      } catch (e) {
+        wepy.stopPullDownRefresh()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+        this.refreshing = true
+        this.showError()
+      }
+    }
+
+    async loginByAccount() {
+      if (!this.name || this.name.length < 1) {
+        wepy.showToast({
+          'title': '请输入账号',
+          icon: 'none'
+        })
+        return
+      }
+      if (!this.psw || this.psw.lenght < 1) {
+        wepy.showToast({
+          'title': '请输入密码',
+          icon: 'none'
+        })
+        return
+      }
+
+      wepy.showLoading({
+        'title': '正在登陆...',
+        icon: 'none',
+        mask: true
+      })
+
+      try {
+        const data = await userApi.login(this.name, this.psw)
+        if (data.viewer.login && data.viewer.login !== '') {
+          wepy.hideLoading()
+          wepy.showToast({
+            title: '登陆成功',
+            icon: 'none'
+          })
+          User.saveUserAndPsw(that.name, that.psw)
+          that.getUserInfo(data.viewer.login)
+        }
+      } catch (e) {
+        wepy.hideLoading()
+        wepy.showToast({
+          title: '账号或密码错误',
+          icon: 'none'
+        })
+      }
+    }
+
+    async loginByToken() {
+      if (!this.token || this.token.length < 1) {
+        wepy.showToast({
+          'title': '请输入Token',
+          icon: 'none'
+        })
+        return
+      }
+
+      wepy.showLoading({
+        'title': '正在登陆...',
+        icon: 'none',
+        mask: true
+      })
+
+      try {
+        const data = await userApi.loginByToken(this.token)
+        if (data.viewer.login && data.viewer.login !== '') {
+          wepy.showToast({
+            title: '登陆成功',
+            icon: 'none'
+          })
+          User.saveUserName(data.viewer.login)
+          User.saveToken(this.token)
+          this.getUserInfo(data.viewer.login)
+        }
+      } catch (e) {
+        wepy.hideLoading()
+        wepy.showToast({
+          title: '输入Token有误',
+          icon: 'none'
+        })
+      }
+    }
+
+    noMore() {
+      if (!this.pageInfo.hasNextPage) {
+        this.hasMore = false
+        this.tip = '别拉了，没有更多啦！'
+      }
+      this.$apply()
+    }
+
+    showError() {
+      this.loading = false
+      if (!this.repos || this.repos.length === 0) {
+        this.error = true
+      } else {
+        this.error = false
+      }
+      this.$apply()
+    }
+
+    formatDate(repos) {
+      for (var repo of repos) {
+        repo.pushedAt = DateUtil.transformToWorld(repo.pushedAt.replace('T', ' ').replace('Z', ''))
+      }
+
+      return repos
+    }
+  }
+</script>

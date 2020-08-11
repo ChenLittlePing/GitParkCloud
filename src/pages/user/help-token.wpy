@@ -1,0 +1,72 @@
+<template>
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/userbar-account-settings.png"/>
+      <text class="text">一、进入Setting.</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/developer-settings.png"/>
+        <text class="text">二、点击 Developer settings.</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/personal_access_tokens_tab.png"/>
+      <text class="text">三、点击Personal access tokens.</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/generate_new_token.png"/>
+      <text class="text">四、点击 Generate new token</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/token_description.png"/>
+      <text class="text">五、填写描述</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/token_scopes.gif"/>
+      <text class="text">六、选择可访问的Scopes</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/generate_token.png"/>
+      <text class="text">七、点击Generate token</text>
+    </view>
+
+    <view class="item">
+      <image class="img" mode="aspectFit" src="https://help.github.com/assets/images/help/settings/personal_access_tokens.png"/>
+      <text class="text">八、复制Token</text>
+    </view>
+</template>
+
+<style>
+
+  .item {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    margin: 24rpx;
+    border: #eee 1px solid;
+    box-shadow: 2rpx 2rpx 10rpx 2rpx #eee;
+  }
+
+  .text {
+    font-size: var(--font-body);
+    margin: 24rpx;
+  }
+
+  .img {
+    width: 100%;
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class HelpToken extends wepy.page {
+    config = {
+      'navigationBarTitleText': '获取Token'
+    }
+  }
+</script>

@@ -1,0 +1,221 @@
+<template>
+  <scroll-view class="scroll" scroll-y bindscrolltolower="loadMore">
+    <repeat for="{{repos}}" key="index" index="index" item="item">
+      <repoitem :item.sync="item"></repoitem>
+    </repeat>
+
+    <repeat for="{{users}}" key="index" index="index" item="item">
+      <useritem :item.sync="item"></useritem>
+    </repeat>
+
+    <loading :loading.sync="hasMore" :tip.sync="tip" wx:if="{{!error}}"></loading>
+
+    <errortip wx:if="{{error}}"/>
+  </scroll-view>
+</template>
+
+<style>
+  .scroll {
+    width: 100vw;
+    height: 100vh;
+    overflow: scroll;
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+
+  import RepoItem from '../../components/item-repo'
+  import UserItem from '../../components/item-user'
+  import Loading from '../../components/loading'
+  import ErrorTip from '../../components/error-tip'
+
+  import UserApi from '../../web/user/user-api'
+  import DateUtil from '../../utils/date'
+
+  let that
+
+  export default class UserProfile extends wepy.page {
+    components = {
+      repoitem: RepoItem,
+      useritem: UserItem,
+      loading: Loading,
+      errortip: ErrorTip
+    }
+
+    data = {
+      type: 'REPO',
+      login: null,
+      repos: [],
+      users: [],
+      pageInfo: null,
+      loading: false,
+      hasMore: true,
+      tip: '正在加载',
+      error: false
+    }
+
+    methods = {
+      loadMore() {
+        if (!that.pageInfo) return
+        if (that.pageInfo.hasNextPage) {
+          that.getData()
+        } else {
+          that.noMore()
+        }
+      }
+    }
+
+    events = {
+      'retry': (tag) => {
+        that.getData()
+      }
+    }
+
+    onLoad(options) {
+      that = this
+      if (options.type) {
+        this.type = options.type
+      }
+      this.login = options.login
+      this.getData()
+    }
+
+    getData() {
+      if (this.type === 'REPO') {
+        wepy.setNavigationBarTitle({
+          title: 'Stared'
+        })
+        this.getStaredRepos()
+      } else if (this.type === 'FOLLOWING') {
+        wepy.setNavigationBarTitle({
+          title: 'Following'
+        })
+        this.getFollowing()
+      } else {
+        wepy.setNavigationBarTitle({
+          title: 'Follower'
+        })
+        this.getFollowers()
+      }
+    }
+
+    async getStaredRepos() {
+      if (this.loading) return
+      this.loading = true
+      this.error = false
+      try {
+        const data = await UserApi.staredRepos(this.login, this.getAfter())
+        this.loading = false
+        this.pageInfo = data.user.starredRepositories.pageInfo
+
+        var repos = this.forDate(data.user.starredRepositories.nodes)
+        this.repos = this.repos.concat(repos)
+        this.$apply()
+        this.noMore()
+      } catch (e) {
+        this.showRepoError()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+      }
+    }
+
+    async getFollowing() {
+      if (this.loading) return
+
+      this.loading = true
+      this.error = false
+      try {
+        const data = await UserApi.following(this.login, this.getAfter())
+        this.loading = false
+        this.pageInfo = data.user.following.pageInfo
+
+        this.users = this.users.concat(data.user.following.nodes)
+        this.$apply()
+        this.noMore()
+      } catch (e) {
+        this.showUserError()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+      }
+    }
+
+    async getFollowers() {
+      if (this.loading) return
+
+      this.loading = true
+      this.error = false
+      try {
+        const data = await UserApi.followers(this.login, this.getAfter())
+        this.loading = false
+        this.pageInfo = data.user.followers.pageInfo
+        this.users = this.users.concat(data.user.followers.nodes)
+        this.$apply()
+        this.noMore()
+      } catch (e) {
+        this.showUserError()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+      }
+    }
+
+    getAfter() {
+      var after = null
+      if (this.pageInfo) {
+        if (this.pageInfo.hasNextPage) {
+          after = this.pageInfo.endCursor
+        }
+      }
+      return after
+    }
+
+    noMore() {
+      if (!this.pageInfo.hasNextPage) {
+        this.tip = '别拉了，没有更多啦！'
+        this.hasMore = false
+        this.$apply()
+      }
+    }
+
+    showRepoError() {
+      this.loading = false
+      if (!this.repos || this.repos.length === 0) {
+        this.error = true
+      } else {
+        this.error = false
+      }
+      this.$apply()
+    }
+
+    showUserError() {
+      this.loading = false
+      if (!this.users || this.users.length === 0) {
+        this.error = true
+      } else {
+        this.error = false
+      }
+      this.$apply()
+    }
+
+    forDate(repos) {
+      for (var repo of repos) {
+        if (repo.stargazers.totalCount > 1000) {
+          repo.stargazers.totalCount = (repo.stargazers.totalCount/1000).toFixed(1) + 'k'
+        }
+        if (repo.forkCount > 1000) {
+          repo.forkCount = (repo.forkCount/1000).toFixed(1) + 'k'
+        }
+        repo.pushedAt = DateUtil.transformToWorld(repo.pushedAt.replace('T', ' ').replace('Z', ''))
+      }
+
+      return repos
+    }
+  }
+</script>

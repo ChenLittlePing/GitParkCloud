@@ -1,0 +1,314 @@
+<template>
+  <view class="all">
+    <view style="background: var(--color-blue)">
+      <view class="header">
+        <view style="display:flex; flex-direction:row;" @tap="selectType">
+          <image class="header-type-menu" src="/images/ic-menu.png"/>
+          <text class="header-type-text">{{type}}</text>
+        </view>
+        <input class="header-input" place-class="header-input-holder" placeholder="请输入关键字" bindinput="inputKey" confirm-type="search" bindconfirm="search"/>
+        <image class="header-search-btn" src="/images/ic-find.png" @tap="search"/>
+      </view>
+    </view>
+
+    <scroll-view class="scroll" scroll-y bindscrolltolower="loadMore">
+      <repeat for="{{repos}}" key="index" index="index" item="item">
+        <repoitem :item.sync="item"></repoitem>
+      </repeat>
+
+      <repeat for="{{users}}" key="index" index="index" item="item">
+        <useritem :item.sync="item"></useritem>
+      </repeat>
+
+      <loading :loading.sync="loading" :tip.sync="tip"></loading>
+
+    </scroll-view>
+  </view>
+
+  <dialog>
+    <view class="dialog-container">
+      <view class="dialog-item" data-id="Repository" @tap="clickType">
+        <image class="dialog-img" src="/images/ic-repo.png"></image>
+        <view class="dialog-text">Repository</view>
+      </view>
+      <!-- <view class="dialog-item" data-id="Issue" @tap="clickType">
+        <image class="dialog-img" src="/images/ic-issue.png"></image>
+        <view class="dialog-text">Issue</view>
+      </view> -->
+      <view class="dialog-item" data-id="User" @tap="clickType">
+        <image class="dialog-img" src="/images/ic-user.png"></image>
+        <view class="dialog-text">User</view>
+      </view>
+    </view>
+  </dialog>
+</template>
+
+<style>
+
+  .all {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 24rpx;
+    border: 1px var(--color-div) solid;
+    border-radius: 40rpx;
+    background: white;
+  }
+
+  .header-type-menu {
+    width: 40rpx;
+    height: 40rpx;
+    margin-left: 24rpx;
+  }
+
+  .header-type-text {
+    margin-left: 12rpx;
+    font-size: var(--font-body);
+    color: var(--color-blue);
+  }
+
+  .header-input {
+    flex: 1;
+    font-size: var(--font-body);
+    padding: 12rpx;
+    padding-left: 32rpx;
+  }
+
+  .header-input-holder {
+    font-size: var(--font-body);
+    padding: 12rpx;
+    padding-left: 32rpx;
+  }
+
+  .header-search-btn {
+    width: 70rpx;
+    height: 70rpx;
+    margin-left: 12rpx;
+  }
+
+  .scroll {
+    flex: 1;
+    overflow: scroll;
+  }
+
+  .dialog-container {
+    display: flex;
+    flex-direction: column;
+    border-radius: 10rpx;
+    background: white;
+  }
+
+  .dialog-item {
+    display: flex;
+    flex-direction: row;
+    margin: 12rpx 48rpx;
+    margin-left: 24rpx;
+    align-items: center;
+  }
+
+  .dialog-img {
+    width: 30rpx;
+    height: 30rpx;
+    margin-right: 12rpx;
+  }
+
+  .dialog-text {
+    font-size: var(--font-body)
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+
+  import RepoItem from '../../components/item-repo'
+  import UserItem from '../../components/item-user'
+  import Loading from '../../components/loading'
+  import Dialog from '../../components/dialog'
+
+  import SearchApi from '../../web/search/search-api'
+  import DateUtil from '../../utils/date'
+
+  import User from '../../utils/user'
+
+  let that
+
+  export default class FindHome extends wepy.page {
+    config = {
+      'navigationBarTitleText': '搜索'
+    }
+
+    components = {
+      repoitem: RepoItem,
+      useritem: UserItem,
+      loading: Loading,
+      dialog: Dialog
+    }
+
+    data = {
+      TYPES: {
+        'Repository': 'REPOSITORY',
+        'Issuse': 'ISSUE',
+        'User': 'USER'
+      },
+      type: 'Repository',
+      searching: false,
+      repos: [],
+      users: [],
+      loading: false,
+      tip: '来都来了，不搜索一下?  ^_^'
+    }
+
+    onLoad() {
+      that = this
+    }
+
+    methods = {
+      selectType(e) {
+        this.$invoke('dialog', 'show')
+      },
+
+      clickType(e) {
+        this.type = e.currentTarget.dataset.id
+        this.$invoke('dialog', 'hide')
+      },
+
+      inputKey(e) {
+        that.key = e.detail.value
+      },
+
+      search() {
+        if (!User.getUserInfo()) {
+          wepy.switchTab({
+            url: '/pages/user/home'
+          })
+          return
+        }
+        if (this.key && this.key.length > 0) {
+          this.cacheKey = this.key
+          this.searching = false
+          this.pageInfo = null
+          this.repos = []
+          this.users = []
+          this.$apply()
+          this.search()
+        } else {
+          wepy.showToast({
+            title: '请输入要搜索的关键字',
+            icon: 'none'
+          })
+        }
+      },
+
+      loadMore() {
+        if (!that.pageInfo) return
+        if (that.pageInfo.hasNextPage) {
+          that.search()
+        }
+      }
+    }
+
+    search() {
+      if (that.searching) return
+      this.tip = '正在加载'
+      this.loading = true
+
+      this.searching = true
+
+      if (this.type === 'Repository') {
+        this.searchRepos()
+      } else if (this.type === 'User') {
+        this.searchUsers()
+      }
+    }
+
+    async searchRepos() {
+      var after = this.getAfter()
+      try {
+        const data = await SearchApi.searchRepos(this.cacheKey, after)
+        this.searching = false
+        if (this.noData(data) || this.type !== 'Repository') {
+          return
+        }
+        this.pageInfo = data.search.pageInfo
+
+        var repos = this.forDate(data.search.nodes)
+        this.repos = this.repos.concat(repos)
+        this.$apply()
+        this.noMore()
+      } catch (e) {
+        this.searching = false
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+      }
+    }
+
+    async searchUsers() {
+      var after = this.getAfter()
+      try {
+        const data = await SearchApi.searchUsers(this.cacheKey, after)
+        this.searching = false
+        if (this.noData(data) || this.type !== 'User') {
+          return
+        }
+        this.pageInfo = data.search.pageInfo
+        this.users = this.users.concat(data.search.nodes)
+        this.$apply()
+        this.noMore()
+      } catch (e) {
+        this.searching = false
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
+        this.$apply()
+      }
+    }
+
+    getAfter() {
+      var after = null
+      if (this.pageInfo) {
+        if (this.pageInfo.hasNextPage) {
+          after = this.pageInfo.endCursor
+        }
+      }
+      return after
+    }
+
+    noData(data) {
+      if (this.pageInfo == null && data.search.nodes.length === 0) {
+        this.tip = '没有搜索到任何数据哦 *_*\n试试别的吧！'
+        this.loading = false
+        this.$apply()
+        return true
+      }
+      return false
+    }
+
+    noMore() {
+      if (!this.pageInfo.hasNextPage) {
+        this.tip = '别拉了，没有更多啦！'
+        this.loading = false
+        this.$apply()
+      }
+    }
+
+    forDate(repos) {
+      for (var repo of repos) {
+        repo.pushedAt = DateUtil.transformToWorld(repo.pushedAt.replace('T', ' ').replace('Z', ''))
+      }
+
+      return repos
+    }
+  }
+</script>

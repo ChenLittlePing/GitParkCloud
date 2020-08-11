@@ -1,0 +1,130 @@
+<template>
+  <view class="repo" hover-class="repo-hover" @tap="clickItem" data-item="{{item}}">
+    <view class="first">
+      <text class="name">{{item.name}}</text>
+      <text class="desc" wx:if="{{item.description}}">{{item.description}}</text>
+      <text class="date" wx:if="{{item.pushedAt}}">最后更新：{{item.pushedAt}}</text>
+    </view>
+
+    <!-- <view class="second" wx:if="{{item.language}}">
+      <image class="img" src="/images/ic-dot.png"></image>
+      <text class="lang-text">{{item.language}}</text>
+    </view> -->
+
+    <view class="second">
+      <image class="img" src="/images/ic-star.png"></image>
+      <text class="star-text">{{item.stargazers.totalCount !== undefine? item.stargazers.totalCount : item.stars}}</text>
+    </view>
+
+    <view class="third">
+      <image class="img" src="/images/ic-fork.png"></image>
+      <text class="fork-text">{{item.forkCount !== undefine? item.forkCount : item.forks}}</text>
+    </view>
+  </view>
+</template>
+
+<style>
+  .repo {
+    display: flex;
+    flex-direction: row;
+    padding: 24rpx;
+    margin-bottom: 1px;
+    background: white;
+    align-items: center;
+  }
+
+  .repo-hover {
+    background: var(--color-div)
+  }
+
+  .first {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .name {
+    font-size: var(--font-title);
+    color: var(--color-blue);
+    font-weight: bold;
+  }
+
+  .desc {
+    display: -webkit-box; /*设置自适应限制行数才能生效*/
+    font-size: var(--font-detial);
+    /* font-style: italic; */
+    margin-top: 12rpx;
+    padding-right: 24rpx;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /*限制两行*/
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-break: break-all;
+  }
+
+  .date {
+    font-size: var(--font-tip);
+    margin-top: 8rpx;
+    color: #555
+  }
+
+  .second {
+    display: flex;
+    flex-direction: row;
+    margin-right: 12rpx;
+    align-items: center;
+  }
+
+  .lang-text, .star-text, .fork-text {
+    font-size: var(--font-detial);
+  }
+
+  .third {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .img {
+    width: 25rpx;
+    height: 25rpx;
+    margin-right: 4rpx;
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+  import user from '../utils/user'
+
+  export default class RepoItem extends wepy.component {
+    props = {
+      item: {
+        type: Object,
+        default: null
+      }
+    }
+
+    methods = {
+      clickItem(e) {
+        if (user.getUserInfo()) {
+          var item = e.currentTarget.dataset.item
+          var owner = ''
+          if (item.owner) {
+            owner = item.owner.login
+          } else {
+            owner = item.author
+          }
+          wepy.navigateTo({
+            url: '/pages/repo/repo-overview?owner=' + owner + '&name=' + item.name
+          })
+        } else {
+          wepy.switchTab({
+            url: '/pages/user/home'
+          })
+        }
+      }
+    }
+  }
+
+</script>

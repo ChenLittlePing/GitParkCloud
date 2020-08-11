@@ -1,0 +1,93 @@
+<template>
+  <view class="user" hover-class="user-hover" wx:if="{{item.id}}" @tap="clickItem">
+    <image class="avatar" src="{{item.avatarUrl}}" mode="widthFit"></image>
+    <view class="detail">
+      <text class="name">{{item.login? item.login : ' '}}</text>
+
+      <view wx:if="{{item.bio}}" style="display:flex; flex-direction:row; align-items: center; margin-top: 12rpx">
+        <image style="width:25rpx; height:25rpx;" src="/images/ic-info.png"></image>
+        <text class="bio">{{item.bio}}</text>
+      </view>
+
+      <view wx:if="{{item.location}}" style="display:flex; flex-direction:row; align-items: center; margin-top: 12rpx">
+        <image style="width:25rpx; height:25rpx;" src="/images/ic-location.png"></image>
+        <text class="location">{{item.location}}</text>
+      </view>
+
+      <view wx:if="{{item.email}}" style="display:flex; flex-direction:row; align-items:center; margin-top: 12rpx">
+        <image style="width:23rpx; height:23rpx;" src="/images/ic-email.png"></image>
+        <text class="email">{{item.email}}</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<style>
+  .user {
+    display: flex;
+    flex-direction: row;
+    padding: 24rpx;
+    margin-bottom: 1px;
+    background: white;
+    align-items: center;
+  }
+
+  .user-hover {
+    background: var(--color-div)
+  }
+
+  .avatar {
+    width: 80rpx;
+    height: 80rpx;
+    padding: 24rpx;
+    border-right: var(--color-div) 1px solid;
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-left: 24rpx;
+  }
+
+  .name {
+    font-size: var(--font-stitle);
+    color: var(--color-blue);
+    font-weight: bold;
+  }
+
+  .location, .email, .bio {
+    flex: 1;
+    font-size: var(--font-tip);
+    margin-left: 12rpx;
+    display: -webkit-box; /*设置自适应限制行数才能生效*/
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /*限制两行*/
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-break: break-all;
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+
+  export default class UserItem extends wepy.component {
+    props = {
+      item: {
+        type: Object,
+        default: null
+      }
+    }
+
+    methods = {
+      clickItem(e) {
+        wepy.navigateTo({
+          url: '/pages/find/user-detail?login=' + this.item.login + '&type=' + (this.item.__typename? this.item.__typename : 'User')
+        })
+      }
+    }
+  }
+
+</script>

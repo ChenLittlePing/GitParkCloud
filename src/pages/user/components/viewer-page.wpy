@@ -1,0 +1,324 @@
+<template>
+  <!-- user info layout -->
+  <view class="user-info-container">
+    <!-- header -->
+    <view class="user-header">
+      <view class="header-first">
+        <image class="header-img" src="{{user? user.avatarUrl:''}}" @tap="clickHeader"/>
+        <text class="header-name">{{user.login}}</text>
+      </view>
+    </view>
+
+    <view class="header-second" wx:if="{{user.type === 'User'}}">
+      <view class="second-item-container" hover-class="hover" @tap="clickStared">
+        <image class="second-item-img" src="/images/ic-star.png"/>
+        <text class="second-item-text">{{user.starredRepositories.totalCount? user.starredRepositories.totalCount:0}}\nStared </text>
+      </view>
+
+      <view class="div"/>
+
+      <view class="second-item-container" hover-class="hover" @tap="clickFollowing">
+        <image class="second-item-img" src="/images/ic-following.png"/>
+        <text class="second-item-text">{{user.following.totalCount? user.following.totalCount:0}}\nFollowing</text>
+      </view>
+
+      <view class="div"/>
+
+      <view class="second-item-container" hover-class="hover" @tap="clickFollower">
+        <image class="second-item-img" src="/images/ic-follower.png"/>
+        <text class="second-item-text">{{user.followers.totalCount? user.followers.totalCount:0}}\nFolower</text>
+      </view>
+    </view>
+
+    <view class="header-second" wx:if="{{user.type === 'Org'}}">
+      <view class="second-item-container" hover-class="hover" @tap="clickStared">
+        <image class="second-item-img" src="/images/ic-star.png"/>
+        <text class="second-item-text">{{user.starredRepositories.totalCount? user.starredRepositories.totalCount:0}}\nStared</text>
+      </view>
+
+      <view class="div"/>
+
+      <view class="second-item-container" hover-class="hover" @tap="clickFollowing">
+        <image class="second-item-img" src="/images/ic-following.png"/>
+        <text class="second-item-text">{{user.following.totalCount? user.following.totalCount:0}}\nFollowing</text>
+      </view>
+
+      <view class="div"/>
+
+      <view class="second-item-container" hover-class="hover" @tap="clickFollower">
+        <image class="second-item-img" src="/images/ic-follower.png"/>
+        <text class="second-item-text">{{user.followers.totalCount? user.followers.totalCount:0}}\nFolower</text>
+      </view>
+    </view>
+
+    <scroll-view class="scroll" scroll-y bindscrolltolower="loadMore">
+      <repeat for="{{repos}}" key="index" index="index" item="item">
+        <repoitem :item.sync="item"></repoitem>
+      </repeat>
+
+      <loading :loading.sync="hasMore" :tip.sync="tip" wx:if="{{!error}}"></loading>
+      <errortip wx:if="{{error}}"/>
+    </scroll-view>
+
+    <dialog>
+      <view class="logout-container">
+        <view class="logout-action" wx:if="{{showLogoutAction}}">
+          <image class="logout-img" src="/images/ic-logout.png"/>
+          <view class="line"/>
+          <view class="logout-text yellow-color" hover-class="hover" tyle="width: 100%" @tap="clickLogout">退出登陆</view>
+        </view>
+
+        <view class="logout-confirm" wx:if="{{!showLogoutAction}}">
+          <text class="logout-text" style="font-size: var(--font-stitle); margin: 8rpx;">确定要退出登陆吗？</text>
+          <view class="line"/>
+          <view class="logout-text-confirm-btns">
+            <view class="logout-text blue-color" hover-class="hover" @tap="cancel">取消</view>
+            <view class="div"/>
+            <view class="logout-text yellow-color" hover-class="hover" @tap="logout">确定</view>
+          </view>
+        </view>
+      </view>
+    </dialog>
+  </view>
+</template>
+
+<style>
+  .user-info-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+  }
+
+  .ic-logout {
+    width: 60rpx;
+    height: 60rpx;
+    position: fixed;
+    top: 10rpx;
+    right: 10rpx;
+  }
+
+  .user-header {
+    width: 100vw;
+    height: 28vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-blue);
+  }
+
+  .header-first {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-img {
+    width: 150rpx;
+    height: 150rpx;
+    border-radius: 150rpx;
+    border: var(--color-sienna) 5rpx solid;
+    background: var(--color-div);
+  }
+
+  .header-name {
+    font-size: var(--font-title);
+    color: white;
+    margin-top: 24rpx;
+  }
+
+  .header-second {
+    width: 100vw;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    /* justify-content: space-around; */
+    border-top: white 1px solid;
+    background: white;
+    margin-bottom: 12rpx;
+  }
+
+  .hover {
+    background: var(--color-div);
+  }
+
+  .second-item-container {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    padding-top: 24rpx;
+    padding-bottom: 24rpx;
+  }
+
+  .second-item-img {
+    width: 30rpx;
+    height: 30rpx;
+    margin-bottom: 8rpx;
+  }
+
+  .second-item-text {
+    font-size: var(--font-body);
+    color: black;
+    margin-left: 12rpx;
+    text-align: center;
+  }
+
+  .div {
+    width: 1px;
+    height: 60rpx;
+    background: var(--color-div);
+  }
+
+  .scroll {
+    width: 100vw;
+    flex: 1;
+    overflow: scroll;
+  }
+
+  .logout-container {
+    width: 50vw;
+    background: white;
+    border-radius: 5rpx;
+  }
+
+  .logout-action, .logout-confirm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logout-img {
+    width: 50rpx;
+    height: 50rpx;
+    margin: 24rpx
+  }
+
+  .logout-text {
+    width: 100%;
+    font-size: var(--font-body);
+    flex: 1;
+    padding: 24rpx;
+    text-align: center;
+  }
+
+  .logout-text-confirm-btns {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 4rpx 0rpx;
+  }
+
+  .line {
+    width: 100%;
+    height: 1px;
+    background: var(--color-div);
+  }
+
+  .blue-color {
+    color: var(--color-blue);
+  }
+
+  .yellow-color {
+    color: var(--color-yellow);
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+  import RepoItem from '../../../components/item-repo'
+  import Loading from '../../../components/loading'
+  import Dialog from '../../../components/dialog'
+  import ErrorTip from '../../../components/error-tip'
+
+  export default class ViewerPage extends wepy.component {
+    props = {
+      user: {
+        type: Object,
+        default: null
+      },
+
+      repos: {
+        type: Object,
+        default: null
+      },
+
+      logout: String,
+
+      hasMore: true,
+
+      showLogoutAction: true,
+
+      tip: {
+        type: String,
+        default: '正在加载'
+      },
+
+      error: {
+        type: Boolean,
+        default: false
+      }
+    }
+
+    components = {
+      repoitem: RepoItem,
+      loading: Loading,
+      errortip: ErrorTip,
+      dialog: Dialog
+    }
+
+    methods = {
+      clickHeader() {
+        if (this.logout) {
+          this.showLogoutAction = true
+          this.$invoke('dialog', 'show')
+        }
+      },
+
+      clickLogout() {
+        this.showLogoutAction = false
+      },
+
+      cancel() {
+        this.$invoke('dialog', 'hide')
+        this.showLogoutAction = true
+      },
+
+      loadMore() {
+        this.$emit('loadMore')
+      },
+
+      logout() {
+        this.$emit('logout')
+        this.$invoke('dialog', 'hide')
+        this.showLogoutAction = true
+      },
+
+      clickStared() {
+        wepy.navigateTo({
+          url: '/pages/user/user-profile?type=' + 'REPO' + '&login=' + this.user.login
+        })
+      },
+
+      clickFollowing() {
+        wepy.navigateTo({
+          url: '/pages/user/user-profile?type=' + 'FOLLOWING' + '&login=' + this.user.login
+        })
+      },
+
+      clickFollower() {
+        wepy.navigateTo({
+          url: '/pages/user/user-profile?type=' + 'FOLLOWER' + '&login=' + this.user.login
+        })
+      }
+    }
+  }
+</script>

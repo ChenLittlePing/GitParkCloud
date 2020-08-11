@@ -1,0 +1,183 @@
+<template>
+  <scroll-view class="scroll-containter" scroll-x style="overflow:scroll">
+    <template wx:if="{{isMD}}" is="entry" data="{{...article, theme: theme}}"/>
+    <text wx:if="{{!isMD}}" class="content-text">{{article}}</text>
+  </scroll-view>
+
+  <view class="loading-container" wx:if="{{loading}}">
+    <loading :loading.sync="true" :tip.sync="加载中..."/>
+  </view>
+
+  <view class="share-container" wx:if="{{!loading && !error}}">
+    <button class="share-btn" open-type="share">
+      <image class="share-img" src="/images/ic-share.png"/>
+    </button>
+  </view>
+
+  <errortip wx:if="{{error}}"/>
+
+  <import src="/towxml/entry.wxml"/>
+</template>
+
+<style>
+  @import '/towxml/style/main.wxss';
+  @import '/towxml/style/theme/light.wxss';
+  @import '/towxml/style/theme/dark.wxss';
+
+  .scroll-containter {
+    width: 95vw;
+    padding: 24rpx;
+  }
+
+  .content-text {
+    font-size: var(--font-body);
+    text-overflow: ellipsis;
+    white-space: pre;
+  }
+
+  .loading-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .share-container {
+    width: 60rpx;
+    height: 60rpx;
+    padding: 10rpx;
+    background: black;
+    position: fixed;
+    bottom: 40rpx;
+    right: 40rpx;
+    opacity: 0.6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .share-btn {
+    width: 50rpx;
+    height: 50rpx;
+    padding: 0rpx;
+    background-color: black;
+    border-color: black;
+  }
+
+  .share-btn::after {
+    border: 0;
+  }
+
+  .share-img {
+    width: 50rpx;
+    height: 50rpx;
+    padding: 0rpx;
+  }
+</style>
+
+<script>
+  import wepy from 'wepy'
+  // 引入towxml库
+  // import Towxml from '../../towxml/main'
+  import RepoApi from '../../web/repo/repo-api'
+  // import Base64 from '../../utils/base64'
+  import Loading from '../../components/loading'
+  import ErrorTip from '../../components/error-tip'
+
+  let that
+
+  export default class FileOverview extends wepy.page {
+    data = {
+      loading: true,
+      error: false,
+      article: '',
+
+      owner: null,
+      repo: null,
+      branch: null,
+      path: null,
+
+      isMD: false,
+      theme: ''
+    }
+
+    components = {
+      loading: Loading,
+      errortip: ErrorTip
+    }
+
+    events = {
+      'retry': (tag) => {
+        that.getFileContent()
+      }
+    }
+
+    onLoad(options) {
+      that = this
+      this.owner = options.owner
+      this.repo = options.repo
+      this.branch = options.branch
+      this.path = options.path
+
+      if (this.owner && this.repo && this.path) {
+        this.getFileContent()
+      }
+    }
+
+    onShareAppMessage(options) {
+      return {
+        title: '发现一个很腻害的文档【' + this.path + '】，点击查看',
+        path: '/pages/repo/file-overview?owner=' + this.owner + '&repo=' + this.repo +
+        '&branch=' + this.branch + '&path=' + this.path,
+        success: function(res) {
+          wepy.showToast({
+            title: '分享成功',
+            icon: 'success'
+          })
+        },
+        fail: function(res) {
+          wepy.showToast({
+            title: '分享取消',
+            image: '../../images/ic-fail.png'
+          })
+        }
+      }
+    }
+
+    async getFileContent() {
+      this.error = false
+      this.loading = true
+      try {
+        const data = await RepoApi.getRepoContent(this.owner, this.repo, this.branch, this.path)
+        wepy.setNavigationBarTitle({
+          title: data.name
+        })
+        this.loading = false
+        this.isMD = this.isMarkDown(data.name)
+        this.article = data.content
+        this.$apply()
+      } catch (e) {
+        wepy.hideLoading()
+        this.error = true
+        this.loading = false
+        this.$apply()
+      }
+    }
+
+    isMarkDown(name) {
+      if (name.indexOf('.') >= 0) {
+        var split = name.split('.')
+        if (split && split.length > 1) {
+          if (split[1] === 'md') {
+            return true
+          }
+        }
+      }
+      return false
+    }
+  }
+
+</script>

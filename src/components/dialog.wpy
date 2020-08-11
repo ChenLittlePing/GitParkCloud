@@ -1,0 +1,180 @@
+
+/**
+ * 通用弹窗组件
+ * -组件中可以自定义布局内容，内容通过slot子节点布局
+ * -组件只提供显示和隐藏功能
+ * -组件过度动画为渐隐渐显
+ *
+ * @author ChenLittlePing
+ */
+
+<template>
+  <!-- 弹窗遮罩 -->
+  <view wx:if="{{isShown}}" class='_dialog-mask {{maskAnim}}'></view>
+  <!-- 弹窗内容 -->
+  <view wx:if="{{isShown}}" class='_dialog {{dialogAnim}}' catchtap='__hide' catchtouchmove='__catchMove'>
+    <view class='_dialog-content' scroll-y catchtap='__preventDialogTouch' catchtouchmove='__catchMove'>
+      <!-- 自定义布局 -->
+      <slot></slot>
+    </view>
+  </view>
+</template>
+
+<style>
+  ._dialog {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 1000;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  ._dialog-mask {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: 1000;
+    background: #000;
+    opacity: 0;
+  }
+
+  ._dialog-content {
+    max-width: 80vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    overflow: hidden;
+  }
+
+  ._anim-mask-show {
+    animation: _mask-fade-in 0.3s forwards;
+  }
+
+  ._anim-mask-hide {
+    animation: _mask-fade-out 0.3s forwards;
+  }
+
+  ._anim-dialog-show {
+    animation: _dialog-fade-in 0.3s forwards;
+  }
+
+  ._anim-dialog-hide {
+    animation: _dialog-fade-out 0.3s forwards;
+  }
+
+  @keyframes _mask-fade-in {
+    from {opacity: 0;}
+    to {opacity: 0.3;}
+  }
+
+  @keyframes _mask-fade-out {
+    from {opacity: 0.3;}
+    to {opacity: 0;}
+  }
+
+  @keyframes _dialog-fade-in {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+
+  @keyframes _dialog-fade-out {
+    from {opacity: 1;}
+    to {opacity: 0;}
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+
+  let that
+
+  export default class Dialog extends wepy.component {
+    /**
+     * 组件的初始数据
+     */
+    props = {
+      isShown: {
+        type: Boolean,
+        default: false
+      },
+      maskAnim: {
+        type: String,
+        default: '' // 遮罩动画
+      },
+      dialogAnim: {
+        type: String,
+        default: '' // 弹窗动画
+      }
+    }
+
+    onLoad() {
+      that = this
+    }
+
+    /**
+     * 显示弹窗
+     */
+    show() {
+      this.isShown = true
+      this.maskAnim = '_anim-mask-show'
+      this.dialogAnim = '_anim-dialog-show'
+      this.$apply()
+    }
+
+    /**
+     * 隐藏弹窗
+     */
+    hide() {
+      this.maskAnim = '_anim-mask-hide'
+      this.dialogAnim = '_anim-dialog-hide'
+      this.$apply()
+      setTimeout(function() {
+        this.isShown = false
+        this.$apply()
+      }.bind(this), 200)
+    }
+
+    /**
+     * 获取显示状态
+     *
+     * 返回 true：显示; false：隐藏
+     */
+    isShown() {
+      return this.data.isShown
+    }
+
+    /**
+     * 组件的方法列表
+     */
+    methods = {
+      /**
+       * 捕获弹窗主窗口点击事件，不让事件向上冒泡给到遮罩
+       */
+      __preventDialogTouch(e) {
+
+      },
+
+      /**
+       * 捕获弹窗主窗口滚动事件，不让事件向上冒泡给到遮罩
+       */
+      __catchMove(e) {
+
+      },
+
+      __hide(e) {
+        that.hide()
+      }
+    }
+  }
+
+</script>

@@ -1,0 +1,131 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+page {
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+
+  --color-green: #00ae9d;
+  --color-blue: #1296db;
+  --color-red: #ed1941;
+  --color-yellow: #CD9B1D;
+  --color-yellow-light: #DAA520;
+  --color-sienna: #FF8247;
+  --color-div: #f5f5f5;
+
+  --font-title: 32rpx;
+  --font-stitle: 30rpx;
+  --font-body: 28rpx;
+  --font-detial: 26rpx;
+  --font-tip: 24rpx;
+}
+
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import config from './utils/config'
+
+export default class extends wepy.app {
+  config = {
+    cloud: true,
+    pages: [
+      'pages/trending/home',
+      'pages/find/home',
+      'pages/find/user-detail',
+      'pages/user/home',
+      'pages/user/user-profile',
+      'pages/user/help-token',
+      'pages/repo/repo-overview',
+      'pages/repo/file-overview',
+      'pages/repo/image-overview',
+      'pages/setting/setting-home'
+    ],
+    window: {
+      backgroundColor: '#1296db',
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#1296db',
+      navigationBarTitleText: '',
+      navigationBarTextStyle: 'white'
+    },
+    tabBar: {
+      'color': '#000000',
+      'selectedColor': '#1296db',
+      'list': [
+        {
+          'pagePath': 'pages/trending/home',
+          'iconPath': '/images/ic-trending-n.png',
+          'selectedIconPath': '/images/ic-trending-s.png',
+          'text': '热门'
+        },
+        {
+          'pagePath': 'pages/find/home',
+          'iconPath': '/images/ic-find-n.png',
+          'selectedIconPath': '/images/ic-find-s.png',
+          'text': '搜索'
+        },
+        {
+          'pagePath': 'pages/user/home',
+          'iconPath': '/images/ic-user-n.png',
+          'selectedIconPath': '/images/ic-user-s.png',
+          'text': '我的'
+        }
+      ]
+    }
+  }
+
+  globalData = {
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix')
+  }
+
+  onLaunch() {
+    if (!wx.cloud) {
+      console.error('请使用 2.2.3 或以上的基础库以使用云能力')
+    } else {
+      wx.cloud.init({
+        env: config.cloudId,
+        traceUser: true
+      })
+    }
+  }
+
+  sleep (s) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve('promise resolved')
+      }, s * 1000)
+    })
+  }
+
+  async testAsync () {
+    const data = await this.sleep(3)
+    console.log(data)
+  }
+
+  getUserInfo(cb) {
+    const that = this
+    if (this.globalData.userInfo) {
+      return this.globalData.userInfo
+    }
+  wepy.getUserInfo({
+      success (res) {
+        that.globalData.userInfo = res.userInfo
+        cb && cb(res.userInfo)
+      }
+    })
+  }
+}
+</script>
