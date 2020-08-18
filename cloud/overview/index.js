@@ -16,9 +16,9 @@ exports.main = async (event, context) => {
   let path = `/repos/${event.owner}/${event.repo}/contents${event.path ? `/${event.path}` : ''}?ref=${event.ref}`
 
   let opt = {
-    host: 'api.github.com',
+    hostname: 'api.github.com',
     method: event.method,
-    path: path,
+    path: encodeURI(path),
     headers: {
       'Authorization': event.headers['authorization'] || '',
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',

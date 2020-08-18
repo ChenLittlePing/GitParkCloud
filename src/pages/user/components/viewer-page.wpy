@@ -3,9 +3,14 @@
   <view class="user-info-container">
     <!-- header -->
     <view class="user-header">
-      <view class="header-first">
+      <!-- <view class="header-first"> -->
+      <view class="header-content">
         <image class="header-img" src="{{user? user.avatarUrl:''}}" @tap="clickHeader"/>
-        <text class="header-name">{{user.login}}</text>
+        <!-- <text class="header-name">{{user.login}}</text> -->
+        <view class="header-info">
+          <text class="header-name">{{user.login}}</text>
+          <view class="header-btn" @tap="clickLogoutHandler">退出账号</view>
+        </view>
       </view>
     </view>
 
@@ -123,14 +128,15 @@
     width: 150rpx;
     height: 150rpx;
     border-radius: 150rpx;
-    border: var(--color-sienna) 5rpx solid;
+    border: 5rpx solid white; /* var(--color-sienna) */
     background: var(--color-div);
   }
 
   .header-name {
-    font-size: var(--font-title);
+    /* margin-top: 24rpx; 
+    font-size: var(--font-title); */
+    font-size: 36rpx;
     color: white;
-    margin-top: 24rpx;
   }
 
   .header-second {
@@ -230,6 +236,36 @@
   .yellow-color {
     color: var(--color-yellow);
   }
+
+  .header-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 50rpx;
+    box-sizing: border-box;
+  }
+
+  .header-info {
+    margin-left: 20rpx;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header-btn {
+    margin-top: 15rpx;
+    width: 140rpx;
+    height: 50rpx;
+    border-radius: 6rpx;
+    font-size: 26rpx;
+    color: white;
+    border: 1px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
 </style>
 
 <script>
@@ -277,10 +313,18 @@
 
     methods = {
       clickHeader() {
+        /*
         if (this.logout) {
           this.showLogoutAction = true
           this.$invoke('dialog', 'show')
         }
+        */
+      },
+
+      //点击了退出账号按钮
+      clickLogoutHandler() {
+        this.showLogoutAction = false
+        this.$invoke('dialog', 'show')
       },
 
       clickLogout() {

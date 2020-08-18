@@ -36,7 +36,7 @@ var RestApi = {
         'Content-Type': 'application/json'
       },
       success: function (data) {
-        // console.log(data);
+        console.log(data);
         // that.callback(f, '服务器开了点小差')
         // return
         if (data.statusCode != 200 || data.data.errMsg ||
@@ -49,7 +49,7 @@ var RestApi = {
         }
       },
       fail: function(data) {
-        // console.log(data);
+        console.log(data);
         if (data.data && data.data.message) {
           that.callback(f, data.data.message)
         } else {

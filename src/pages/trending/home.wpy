@@ -205,7 +205,7 @@
     }
 
     onPullDownRefresh() {
-      this.setDatas(this.index, {})
+      this.setDatas(this.index, [])
       this.getTrending(this.index)
     }
 
@@ -244,6 +244,7 @@
     }
 
     setDatas(index, repos) {
+      console.log(repos)
       repos.forEach(element => {
         if (element.stars > 1000) {
           element.stars = (element.stars/1000).toFixed(1) + 'k'

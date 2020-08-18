@@ -12,7 +12,6 @@ var UserApi = {
     let query = JSON.stringify({
       query: documents.login()
     })
-
     let data = await graphql.request(query)
     return data
   },

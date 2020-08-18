@@ -55,9 +55,17 @@
     </scroll-view>
 
     <view class="float-container">
-      <image class="float-branch" src="/images/ic-branch.png" @tap="clickBranches" wx:if="{{branches.length > 1 && fileTrees[branch]}}"/>
 
-      <view class="share-container" wx:if="{{fileTrees[branch]}}">
+      <!-- 评论 -->
+      <view wx:if="{{fileTrees[branch]}}" class="float-btn" @tap="clickComment">
+        <image class="float-btn-ic" src="/images/ic-comment.png"></image>
+      </view>
+
+      <view wx:if="{{branches.length > 1 && fileTrees[branch]}}" class="float-btn" @tap="clickBranches">
+        <image class="float-btn-ic" src="/images/ic-branch.png"></image>
+      </view>
+
+      <view class="float-btn" wx:if="{{fileTrees[branch]}}">
         <button class="share-btn" open-type="share">
           <image class="share-img" src="/images/ic-share.png"/>
         </button>
@@ -75,6 +83,10 @@
       </repeat>
     </scroll-view>
   </dialog>
+
+  <!-- 评论区域 -->
+  <commentview :isShow.sync="isShowComment" :repoId.sync="repoId" :owner.sync="owner" :avatar.sync="avatar"></commentview>
+
 </template>
 
 <style>
@@ -237,28 +249,22 @@
     right: 40rpx;
   }
 
-  .float-branch {
-    width: 60rpx;
-    height: 60rpx;
-    padding: 10rpx;
-    border-radius: 50%;
-    background: black;
-    box-shadow: 2rpx 2rpx 20rpx 2rpx #aaa;
-    opacity: 0.6;
-    margin-bottom: 12rpx;
-  }
-
-  .share-container {
+  .float-btn {
+    margin-top: 20rpx;
     width: 80rpx;
     height: 80rpx;
+    border-radius: 50%;
+    background: black;
+    box-shadow: 2rpx 2rpx 20rpx 2rpx #aaa;
+    opacity: 0.6;
     display: flex;
-    flex-direction: row;
     align-items: center;
     justify-content: center;
-    background: black;
-    opacity: 0.6;
-    border-radius: 50%;
-    box-shadow: 2rpx 2rpx 20rpx 2rpx #aaa;
+  }
+
+  .float-btn-ic {
+    width: 50rpx;
+    height: 50rpx;
   }
 
   .share-btn {
@@ -322,13 +328,15 @@
   import RepoApi from '../../web/repo/repo-api'
   import Dialog from '../../components/dialog'
   import ErrorTip from '../../components/error-tip'
+  import CommentViewer from './components/viewer-comment'
 
   let that
 
   export default class RepoOverview extends wepy.page {
     components = {
       dialog: Dialog,
-      errortip: ErrorTip
+      errortip: ErrorTip,
+      commentview: CommentViewer
     }
 
     data = {
@@ -336,6 +344,8 @@
       error: false,
       owner: null,
       name: null,
+      avatar: null,
+      repoId: null,
       repo: null,
       overview: null,
       branch: '',
@@ -350,7 +360,9 @@
       fileTrees: {},
       files: [],
 
-      PICS: ['bmp', 'jpg', 'jpeg', 'png', 'tiff', 'gif', 'svg']
+      PICS: ['bmp', 'jpg', 'jpeg', 'png', 'tiff', 'gif', 'svg'],
+
+      isShowComment: false // 显示评论区
     }
 
     methods = {
@@ -423,7 +435,13 @@
         that.path = ''
         that.abslutePath = ''
         that.getRepoContent()
+      },
+
+      // 点击评论按钮
+      clickComment() {
+        this.isShowComment = true
       }
+
     }
 
     events = {
@@ -440,6 +458,7 @@
       that = this
       this.owner = options.owner
       this.name = options.name
+      this.avatar = JSON.parse(options.avatar)
 
       if (this.owner && this.name) {
         wepy.setNavigationBarTitle({
@@ -481,6 +500,7 @@
       try {
         const data = await RepoApi.getRepoOverview(this.owner, this.name)
         this.repo = data.repository
+        this.repoId = this.repo.id
         this.branch = this.repo.defaultBranchRef.name
         this.branches = this.repo.refs.nodes
         this.formatCount()
@@ -564,11 +584,11 @@
           })
         }
       } catch (e) {
-          wepy.hideLoading()
-          wepy.showToast({
-            title: e,
-            icon: 'none'
-          })
+        wepy.hideLoading()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
       }
     }
 
@@ -593,11 +613,11 @@
           })
         }
       } catch (e) {
-          wepy.hideLoading()
-          wepy.showToast({
-            title: e,
-            icon: 'none'
-          })
+        wepy.hideLoading()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
       }
     }
 
@@ -622,11 +642,11 @@
           })
         }
       } catch (e) {
-          wepy.hideLoading()
-          wepy.showToast({
-            title: e,
-            icon: 'none'
-          })
+        wepy.hideLoading()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
       }
     }
 
@@ -651,11 +671,11 @@
           })
         }
       } catch (e) {
-          wepy.hideLoading()
-          wepy.showToast({
-            title: e,
-            icon: 'none'
-          })
+        wepy.hideLoading()
+        wepy.showToast({
+          title: e,
+          icon: 'none'
+        })
       }
     }
 

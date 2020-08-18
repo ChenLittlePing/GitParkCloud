@@ -115,8 +115,12 @@
           } else {
             owner = item.author
           }
+          var avatar = ''
+          if (item.avatar) {
+            avatar = JSON.stringify(item.avatar)
+          }
           wepy.navigateTo({
-            url: '/pages/repo/repo-overview?owner=' + owner + '&name=' + item.name
+            url: '/pages/repo/repo-overview?owner=' + owner + '&name=' + item.name + '&avatar=' + avatar
           })
         } else {
           wepy.switchTab({

@@ -5,6 +5,7 @@ export default async function cloud(funName, data) {
       name: funName,
       data: data
     })
+    console.log(res)
     if (res.result.code === 200) {
       return res.result.data
     } else {

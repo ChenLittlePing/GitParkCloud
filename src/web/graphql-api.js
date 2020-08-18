@@ -28,7 +28,7 @@ var BaseApi = {
         'authorization': User.getAuthorization() || ''
       }
     }
-
+    console.log(data)
     return await cloud('graphql', data)
   }
 }

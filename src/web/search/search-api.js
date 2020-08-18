@@ -1,6 +1,7 @@
 
 import BaseApi from '../graphql-api.js'
 import documents from './search-doc'
+import Base64 from '../../utils/base64.js'
 
 /**
  * 用户相关网络接口
