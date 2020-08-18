@@ -5,7 +5,10 @@
     <view class="user-header">
       <!-- <view class="header-first"> -->
       <view class="header-content">
-        <image class="header-img" src="{{user? user.avatarUrl:''}}" @tap="clickHeader"/>
+        <view class="header-img" @tap="clickHeader">
+          <imageview :obj.sync="user"></imageview>
+        </view>
+        <!-- <image class="header-img" @tap="clickHeader" src="{{user? user.avatarUrl:''}}"></image> -->
         <!-- <text class="header-name">{{user.login}}</text> -->
         <view class="header-info">
           <text class="header-name">{{user.login}}</text>
@@ -68,17 +71,17 @@
     <dialog>
       <view class="logout-container">
         <view class="logout-action" wx:if="{{showLogoutAction}}">
-          <image class="logout-img" src="/images/ic-logout.png"/>
-          <view class="line"/>
+          <image class="logout-img" src="/images/ic-logout.png"></image>
+          <view class="line"></view>
           <view class="logout-text yellow-color" hover-class="hover" tyle="width: 100%" @tap="clickLogout">退出登陆</view>
         </view>
 
         <view class="logout-confirm" wx:if="{{!showLogoutAction}}">
           <text class="logout-text" style="font-size: var(--font-stitle); margin: 8rpx;">确定要退出登陆吗？</text>
-          <view class="line"/>
+          <view class="line"></view>
           <view class="logout-text-confirm-btns">
             <view class="logout-text blue-color" hover-class="hover" @tap="cancel">取消</view>
-            <view class="div"/>
+            <view class="div"></view>
             <view class="logout-text yellow-color" hover-class="hover" @tap="logout">确定</view>
           </view>
         </view>
@@ -133,8 +136,6 @@
   }
 
   .header-name {
-    /* margin-top: 24rpx; 
-    font-size: var(--font-title); */
     font-size: 36rpx;
     color: white;
   }
@@ -274,6 +275,7 @@
   import Loading from '../../../components/loading'
   import Dialog from '../../../components/dialog'
   import ErrorTip from '../../../components/error-tip'
+  import ImageView from '../../../components/image-view'
 
   export default class ViewerPage extends wepy.component {
     props = {
@@ -308,7 +310,8 @@
       repoitem: RepoItem,
       loading: Loading,
       errortip: ErrorTip,
-      dialog: Dialog
+      dialog: Dialog,
+      imageview: ImageView
     }
 
     methods = {
@@ -321,7 +324,7 @@
         */
       },
 
-      //点击了退出账号按钮
+      // 点击了退出账号按钮
       clickLogoutHandler() {
         this.showLogoutAction = false
         this.$invoke('dialog', 'show')

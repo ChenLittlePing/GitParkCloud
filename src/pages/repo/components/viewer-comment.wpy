@@ -17,7 +17,9 @@
 
         <repeat for="{{commentList}}" index="idx" item="comment">
           <view class="mask-list-item">
-            <image class="mask-list-header" src="{{comment.from_avatar}}"></image>
+            <view class="mask-list-header">
+              <imageview :obj.sync="comment"></imageview>
+            </view>
             <view class="mask-list-info" @tap="_onClickCommentItemHandler" data-index="{{idx}}">
               <text class="mask-list-name">{{comment.from_name}}</text>
               <text class="mask-list-content">{{comment.content}}</text>
@@ -27,7 +29,10 @@
               <view wx:if="{{comment.isShowMore}}">
                 <repeat for="{{subcomments[comment._id]}}" index="subIndex" item="subComment">
                   <view class="mask-list-item">
-                    <image class="mask-list-sub-header" src="{{subComment.from_avatar}}"></image>
+                    <view class="mask-list-sub-header">
+                      <imageview :obj.sync="subComment"></imageview>
+                    </view>
+                    <!-- <image class="mask-list-sub-header" src="{{subComment.from_avatar}}"></image> -->
                     <view class="mask-list-info" @tap="_onClickSubCommentItemHandler" data-comment="{{subComment}}">
                       <text class="mask-list-name">{{subComment.from_name}}</text>
                       <rich-text class="mask-list-sub-content" nodes="{{subComment._content}}"></rich-text>
@@ -228,6 +233,7 @@
   import DateUtil from '../../../utils/date'
   import StringUtil from '../../../utils/string-util'
   import User from '../../../utils/user'
+  import ImageView from '../../../components/image-view'
 
   let that
 
@@ -308,7 +314,8 @@
     }
 
     components = {
-      errortip: ErrorTip
+      errortip: ErrorTip,
+      imageview: ImageView
     }
 
     onLoad() {
@@ -345,11 +352,12 @@
         repoId: this.repoId,
         parentId: comment ? comment._id : null,
         page: curPage,
-        pageSize: this.pageSize
+        pageSize: comment ? 1000 : this.pageSize
       }
       try {
         var res = await DBApi.queryComments(params)
         var list = res.data
+        // 格式化时间 或者 回复内容
         list.map((item, index) => {
           if (item.createTime) {
             let fmtTime = DateUtil.transformToWorld(item.createTime)
@@ -362,6 +370,7 @@
           return item
         })
         if (!comment) {
+          // 母评论
           if (curPage === 1) {
             this.commentList = list
           } else {
@@ -371,12 +380,14 @@
             this.curPage = curPage
           }
         } else {
+          // 子评论
           comment['isShowMore'] = true
           this.commentList[commentIndex] = comment
           this.subcomments[comment._id] = list
         }
         this.error = false
       } catch (err) {
+        // 如果页面没有数据，才显示错误信息
         if (!comment && curPage === 1) {
           this.error = true
         }
@@ -414,7 +425,6 @@
 
       // 获取评论内容
       _onGetInputValueHandler(e) {
-        // let inputV = e.detail.value
         this.inputValue = e.detail.value
       },
 
@@ -427,6 +437,7 @@
             icon: 'none'
           })
         }
+        // 设置提交评论的数据
         let user = User.getUserInfo()
         let querys = {
           repoId: this.repoId,
@@ -434,6 +445,7 @@
           from_avatar: user.avatarUrl,
           content: inputV
         }
+        // 判断是母评论还是子评论
         if (this.commentIndex !== -1) {
           let comment = this.commentList[this.commentIndex]
           querys['to_name'] = comment.from_name
@@ -450,6 +462,7 @@
             querys['fmtTime'] = '刚刚'
             if (that.commentIndex !== -1) {
               let comment = this.commentList[this.commentIndex]
+              // 设置子评论列表
               var sublist = this.subcomments[comment._id]
               if (!sublist) {
                 sublist = []
@@ -458,14 +471,20 @@
               querys['_content'] = _content
               sublist.unshift(querys)
               this.subcomments[comment._id] = sublist
+              // 设置母评论数
+              comment['isShowMore'] = true
+              comment['amount'] = sublist.length
+              this.commentList[this.commentIndex] = comment
             } else {
               that.commentList.unshift(querys)
             }
+            // 清空评论输入框
             that.commentIndex = -1
             that.inputValue = ''
             that.inputPlaceholder = '说点什么吧~'
             that.$apply()
           } else {
+            // 提示错误
             wepy.showToast({
               title: res.msg,
               icon: 'none'
@@ -479,6 +498,7 @@
         if (this.isLoading) {
           return
         }
+        // 获取分页数据
         if (this.commentList.length >= this.curPage * this.pageSize) {
           var pageNum = this.curPage + 1
           this._queryCommentsFromServer(pageNum)

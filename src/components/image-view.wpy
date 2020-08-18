@@ -1,0 +1,77 @@
+<template>
+  <view class="comp-container">
+    <image class="comp-img" src="{{src}}" bindload="_onLoadImageSuccessHandler" mode="aspectFit" />
+    <image wx:if="{{!isSuccess}}" class="comp-placeholder" src="{{placeholder}}" />
+  </view>
+</template>
+
+<style>
+
+  .comp-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .comp-img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .comp-placeholder {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
+<script>
+
+  import wepy from 'wepy'
+
+  export default class ImageView extends wepy.component {
+    props = {
+      obj: {
+        type: Object,
+        default: null
+      }, // 图片链接对象（需要从中提取图片链接）
+      src: {
+        type: String,
+        default: null
+      }, // 图片链接
+      placeholder: {
+        type: String,
+        default: '/images/ic-default-avatar.png'
+      }, // 默认图片
+      isSuccess: {
+        type: Boolean,
+        default: false
+      } // 加载成功
+    }
+
+    // 监听属性变化
+    watch = {
+      obj (newVal, oldVal) {
+        if (newVal) {
+          var src = newVal.from_avatar
+          if (!src) {
+            src = newVal.avatarUrl
+          }
+          this.src = src
+        }
+      }
+    }
+
+    methods = {
+      // 加载图片成功
+      _onLoadImageSuccessHandler(e) {
+        this.isSuccess = true
+        this.$apply()
+      }
+    }
+  }
+</script>
