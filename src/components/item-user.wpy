@@ -84,7 +84,7 @@
     methods = {
       clickItem(e) {
         wepy.navigateTo({
-          url: '/pages/find/user-detail?login=' + this.item.login + '&type=' + (this.item.__typename? this.item.__typename : 'User')
+          url: '/pages/find/user-detail?login=' + this.item.login + '&type=' + (this.item.__typename ? this.item.__typename : 'User')
         })
       }
     }

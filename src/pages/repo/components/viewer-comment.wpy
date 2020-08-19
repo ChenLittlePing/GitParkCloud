@@ -1,13 +1,13 @@
 <template>
 
-  <view wx:if="{{isShowFlag}}" class="mask-container" @tap="_onDoNothingHandler">
+  <view wx:if="{{isShowFlag}}" class="mask-container" @tap.stop="_onDoNothingHandler">
 
-    <view class="mask-content" @tap="_onDoNothingHandler">
+    <view class="mask-content" @tap.stop="_onDoNothingHandler">
 
       <!-- 头部评论数 -->
       <view class="mask-header">
-        <view class="mask-header-title">{{isLoading ? "加载中..." : commentList.length + "条评论"}}</view>
-        <view class="mask-header-btn" @tap="_onClickCloseButtonHandler">
+        <view class="mask-header-title">{{isLoading ? "加载中..." : "评论区"}}</view>
+        <view class="mask-header-btn" @tap.stop="_onClickCloseButtonHandler">
           <image class="mask-header-btn-ic" src="/images/ic-dialog-close.png"></image>
         </view>
       </view>
@@ -20,7 +20,7 @@
             <view class="mask-list-header">
               <imageview :obj.sync="comment"></imageview>
             </view>
-            <view class="mask-list-info" @tap="_onClickCommentItemHandler" data-index="{{idx}}">
+            <view class="mask-list-info" @tap.stop="_onClickCommentItemHandler" data-index="{{idx}}">
               <text class="mask-list-name">{{comment.from_name}}</text>
               <text class="mask-list-content">{{comment.content}}</text>
               <text wx:if="{{comment.fmtTime}}" class="mask-list-date">{{comment.fmtTime}}</text>
@@ -33,7 +33,7 @@
                       <imageview :obj.sync="subComment"></imageview>
                     </view>
                     <!-- <image class="mask-list-sub-header" src="{{subComment.from_avatar}}"></image> -->
-                    <view class="mask-list-info" @tap="_onClickSubCommentItemHandler" data-comment="{{subComment}}">
+                    <view class="mask-list-info" @tap.stop="_onClickSubCommentItemHandler" data-idx="{{idx}}" data-index="{{subIndex}}">
                       <text class="mask-list-name">{{subComment.from_name}}</text>
                       <rich-text class="mask-list-sub-content" nodes="{{subComment._content}}"></rich-text>
                       <text wx:if="{{subComment.fmtTime}}" class="mask-list-date">{{subComment.fmtTime}}</text>
@@ -44,7 +44,7 @@
             </view>
           </view>
           <!-- 展开子评论 -->
-          <view wx:if="{{comment.amount > 0 && !comment.isShowMore}}" class="mask-list-more-btn" @tap="_onClickOpenCommentHandler" data-index="{{idx}}">查看所有评论</view>
+          <view wx:if="{{comment.amount > 0 && !comment.isShowMore}}" class="mask-list-more-btn" @tap.stop="_onClickOpenCommentHandler" data-index="{{idx}}">查看所有评论</view>
         </repeat>
 
         <errortip wx:if="{{error}}"></errortip>
@@ -55,7 +55,7 @@
 
       <view class="toolbar">
         <input class="toolbar-input" value="{{inputValue}}" placeholder="{{inputPlaceholder}}" focus="{{inputFocus}}" confirm-type="send" bindconfirm="_onClickSendButtonHandler" bindinput="_onGetInputValueHandler"></input>
-        <view class="toolbar-btn" @tap="_onClickSendButtonHandler">发送</view>
+        <view class="toolbar-btn" @tap.stop="_onClickSendButtonHandler">发送</view>
       </view>
 
     </view>
@@ -287,7 +287,11 @@
       commentIndex: {
         type: Number,
         default: -1
-      }, // 当前评论的用户索引
+      }, // 当前母评论的用户索引
+      subCommentIndex: {
+        type: Number,
+        default: -1
+      }, // 当前子评论的用户索引
       subcomments: {
         type: Object,
         default: {}
@@ -413,12 +417,25 @@
         this._queryCommentsFromServer(1, index)
       },
 
-      // 点击评论列表进行回复
+      // 点击母评论列表进行回复
       _onClickCommentItemHandler(e) {
         let index = e.currentTarget.dataset.index
         let comment = this.commentList[index]
         this.commentIndex = index
         this.inputPlaceholder = '回复 @' + comment.from_name
+        this.inputFocus = true
+        this.$apply()
+      },
+
+      // 点击子评论进行评论
+      _onClickSubCommentItemHandler(e) {
+        let idx = e.currentTarget.dataset.idx
+        let index = e.currentTarget.dataset.index
+        let comment = this.commentList[idx]
+        let subComment = this.subcomments[comment._id][index]
+        this.commentIndex = idx
+        this.subCommentIndex = index
+        this.inputPlaceholder = '回复 @' + subComment.from_name
         this.inputFocus = true
         this.$apply()
       },
@@ -430,7 +447,7 @@
 
       // 发送评论
       _onClickSendButtonHandler(e) {
-        var inputV = this.data.inputValue // e.detail.value
+        var inputV = this.data.inputValue
         if (StringUtil.trim(inputV) === '') {
           wepy.showToast({
             title: '请输入内容',
@@ -445,9 +462,12 @@
           from_avatar: user.avatarUrl,
           content: inputV
         }
-        // 判断是母评论还是子评论
+        // 判断是母评论还是回复评论
         if (this.commentIndex !== -1) {
-          let comment = this.commentList[this.commentIndex]
+          var comment = this.commentList[this.commentIndex]
+          if (this.subCommentIndex !== -1) {
+            comment = this.subcomments[comment._id][this.subCommentIndex]
+          }
           querys['to_name'] = comment.from_name
           querys['to_avatar'] = comment.from_avatar
           querys['parentId'] = comment.parentId ? comment.parentId : comment._id
@@ -480,6 +500,7 @@
             }
             // 清空评论输入框
             that.commentIndex = -1
+            that.subCommentIndex = -1
             that.inputValue = ''
             that.inputPlaceholder = '说点什么吧~'
             that.$apply()
