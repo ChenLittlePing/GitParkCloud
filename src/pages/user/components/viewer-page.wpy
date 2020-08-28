@@ -281,7 +281,8 @@
     props = {
       user: {
         type: Object,
-        default: null
+        default: null,
+        twoWay: true
       },
 
       repos: {
@@ -344,6 +345,7 @@
       },
 
       logout() {
+        this.user = null
         this.$emit('logout')
         this.$invoke('dialog', 'hide')
         this.showLogoutAction = true

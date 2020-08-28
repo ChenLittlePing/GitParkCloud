@@ -207,10 +207,10 @@
     forDate(repos) {
       for (var repo of repos) {
         if (repo.stargazers.totalCount > 1000) {
-          repo.stargazers.totalCount = (repo.stargazers.totalCount/1000).toFixed(1) + 'k'
+          repo.stargazers.totalCount = (repo.stargazers.totalCount / 1000).toFixed(1) + 'k'
         }
         if (repo.forkCount > 1000) {
-          repo.forkCount = (repo.forkCount/1000).toFixed(1) + 'k'
+          repo.forkCount = (repo.forkCount / 1000).toFixed(1) + 'k'
         }
         repo.pushedAt = DateUtil.transformToWorld(repo.pushedAt.replace('T', ' ').replace('Z', ''))
       }

@@ -6,7 +6,7 @@
 
       <!-- 头部评论数 -->
       <view class="mask-header">
-        <view class="mask-header-title">{{isLoading ? "加载中..." : "评论区"}}</view>
+        <view class="mask-header-title">{{isLoading ? "加载中..." : "评论留言区"}}</view>
         <view class="mask-header-btn" @tap.stop="_onClickCloseButtonHandler">
           <image class="mask-header-btn-ic" src="/images/ic-dialog-close.png"></image>
         </view>
@@ -26,8 +26,8 @@
               <text wx:if="{{comment.fmtTime}}" class="mask-list-date">{{comment.fmtTime}}</text>
 
               <!-- 子评论列表 -->
-              <view wx:if="{{comment.isShowMore}}">
-                <repeat for="{{subcomments[comment._id]}}" index="subIndex" item="subComment">
+              <view wx:if="{{comment.isShowSub}}">
+                <repeat for="{{comment.subcomments}}" index="subIndex" item="subComment">
                   <view class="mask-list-item">
                     <view class="mask-list-sub-header">
                       <imageview :obj.sync="subComment"></imageview>
@@ -44,7 +44,7 @@
             </view>
           </view>
           <!-- 展开子评论 -->
-          <view wx:if="{{comment.amount > 0 && !comment.isShowMore}}" class="mask-list-more-btn" @tap.stop="_onClickOpenCommentHandler" data-index="{{idx}}">查看所有评论</view>
+          <view wx:if="{{comment.amount > 0 && !comment.isShowSub}}" class="mask-list-more-btn" @tap.stop="_onClickOpenCommentHandler" data-index="{{idx}}">查看所有评论</view>
         </repeat>
 
         <errortip wx:if="{{error}}"></errortip>
@@ -287,15 +287,11 @@
       commentIndex: {
         type: Number,
         default: -1
-      }, // 当前母评论的用户索引
+      }, // 当前母评论的索引
       subCommentIndex: {
         type: Number,
         default: -1
-      }, // 当前子评论的用户索引
-      subcomments: {
-        type: Object,
-        default: {}
-      }, // 子评论列表，比如{母评论id: []}
+      }, // 当前子评论的索引
       curPage: {
         type: Number,
         default: 1
@@ -349,7 +345,7 @@
         curPage = 1
       }
       var comment = null
-      if (commentIndex === 0 || commentIndex > 0) {
+      if (commentIndex >= 0) {
         comment = this.commentList[commentIndex]
       }
       let params = {
@@ -385,9 +381,9 @@
           }
         } else {
           // 子评论
-          comment['isShowMore'] = true
+          comment['isShowSub'] = true
+          comment['subcomments'] = list
           this.commentList[commentIndex] = comment
-          this.subcomments[comment._id] = list
         }
         this.error = false
       } catch (err) {
@@ -432,7 +428,7 @@
         let idx = e.currentTarget.dataset.idx
         let index = e.currentTarget.dataset.index
         let comment = this.commentList[idx]
-        let subComment = this.subcomments[comment._id][index]
+        let subComment = comment.subcomments[index]
         this.commentIndex = idx
         this.subCommentIndex = index
         this.inputPlaceholder = '回复 @' + subComment.from_name
@@ -466,7 +462,7 @@
         if (this.commentIndex !== -1) {
           var comment = this.commentList[this.commentIndex]
           if (this.subCommentIndex !== -1) {
-            comment = this.subcomments[comment._id][this.subCommentIndex]
+            comment = comment.subcomments[this.subCommentIndex]
           }
           querys['to_name'] = comment.from_name
           querys['to_avatar'] = comment.from_avatar
@@ -481,20 +477,20 @@
           if (res) {
             querys['fmtTime'] = '刚刚'
             if (that.commentIndex !== -1) {
-              let comment = this.commentList[this.commentIndex]
+              let comment = that.commentList[that.commentIndex]
               // 设置子评论列表
-              var sublist = this.subcomments[comment._id]
+              var sublist = comment.subcomments
               if (!sublist) {
                 sublist = []
               }
               let _content = '回复<span style="color: gray;">@' + querys.to_name + '</span>：' + querys.content
               querys['_content'] = _content
               sublist.unshift(querys)
-              this.subcomments[comment._id] = sublist
+              comment.subcomments = sublist
               // 设置母评论数
-              comment['isShowMore'] = true
+              comment['isShowSub'] = true
               comment['amount'] = sublist.length
-              this.commentList[this.commentIndex] = comment
+              that.commentList[that.commentIndex] = comment
             } else {
               that.commentList.unshift(querys)
             }

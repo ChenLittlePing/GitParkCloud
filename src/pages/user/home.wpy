@@ -336,15 +336,15 @@
     }
 
     onPullDownRefresh() {
-      var login = this.user.login
       this.repos = []
       this.pageInfo = null
       this.hasMore = true
       this.tip = '正在加载'
       this.$apply()
-      if (login) {
+      var user = this.user
+      if (user && user.login) {
         this.refreshing = true
-        this.getUserInfo(login)
+        this.getUserInfo(user.login)
       } else {
         wepy.stopPullDownRefresh()
       }
@@ -411,9 +411,9 @@
         that.loginAnim = 'anim-show'
         that.userInfoAnim = 'anim-hide'
 
-        that.$apply()
-
         User.clear()
+
+        that.$apply()
       },
 
       'retry': (tag) => {
@@ -457,7 +457,7 @@
           title: e,
           icon: 'none'
         })
-        this.refreshing = true
+        this.refreshing = false
         this.showError()
       }
     }

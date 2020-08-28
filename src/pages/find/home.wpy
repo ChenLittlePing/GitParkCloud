@@ -235,7 +235,9 @@
       try {
         const data = await SearchApi.searchRepos(this.cacheKey, after)
         this.searching = false
+        this.loading = false
         if (this.noData(data) || this.type !== 'Repository') {
+          this.$apply()
           return
         }
         this.pageInfo = data.search.pageInfo
@@ -246,6 +248,8 @@
         this.noMore()
       } catch (e) {
         this.searching = false
+        this.loading = false
+        this.$apply()
         wepy.showToast({
           title: e,
           icon: 'none'
@@ -258,7 +262,9 @@
       try {
         const data = await SearchApi.searchUsers(this.cacheKey, after)
         this.searching = false
+        this.loading = false
         if (this.noData(data) || this.type !== 'User') {
+          this.$apply()
           return
         }
         this.pageInfo = data.search.pageInfo
@@ -267,11 +273,12 @@
         this.noMore()
       } catch (e) {
         this.searching = false
+        this.loading = false
+        this.$apply()
         wepy.showToast({
           title: e,
           icon: 'none'
         })
-        this.$apply()
       }
     }
 
